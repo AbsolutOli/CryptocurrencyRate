@@ -72,7 +72,7 @@
           <div
             v-for="tick in tickers"
             v-bind:key="tick"
-            v-on:click="sel = tick"
+            v-on:click="select(tick)"
             v-bind:class="{
               'border-4': sel === tick,
             }"
@@ -114,10 +114,12 @@
           {{ sel.name }} - USD
         </h3>
         <div class="flex items-end border-gray-600 border-b border-l h-64">
-          <div class="bg-purple-800 border w-10 h-24"></div>
-          <div class="bg-purple-800 border w-10 h-32"></div>
-          <div class="bg-purple-800 border w-10 h-48"></div>
-          <div class="bg-purple-800 border w-10 h-16"></div>
+          <div
+            v-for="col in graphElements()"
+            v-bind:key="col"
+            v-bind:style="{ height: `${col}%` }"
+            class="bg-purple-800 border w-10"
+          ></div>
         </div>
         <button
           @click="sel = null"
@@ -158,6 +160,7 @@ export default {
       ticker: "",
       tickers: [],
       sel: null,
+      graph: [],
     };
   },
   methods: {
@@ -172,14 +175,31 @@ export default {
         const f = await fetch(
           `https://min-api.cryptocompare.com/data/price?fsym=${newTicker.name}&tsyms=USD&api_key=2b7b5e795aa75ccdba09dcf9e5af2f8421faee1c8d82082d619096ac2e932476`
         );
+
         const data = await f.json();
         this.tickers.find((t) => t.name === newTicker.name).price =
           data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
-      }, 60000);
+
+        if (this.sel?.name === newTicker.name) {
+          this.graph.push(data.USD);
+        }
+      }, 5000); //5000300000
+
       this.ticker = "";
     },
     handleDelete(tickerToRemove) {
       this.tickers = this.tickers.filter((t) => t != tickerToRemove);
+    },
+    graphElements() {
+      const maxValue = Math.max(...this.graph);
+      const minValue = Math.min(...this.graph);
+      return this.graph.map(
+        (price) => 5 + ((price - minValue) * 95) / (maxValue - minValue)
+      );
+    },
+    select(ticker) {
+      this.sel = ticker;
+      this.graph = [];
     },
   },
 };
