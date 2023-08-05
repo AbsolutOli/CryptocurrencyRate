@@ -185,6 +185,18 @@ export default {
   },
 
   created() {
+    const windowData = Object.fromEntries(
+      new URL(window.location).searchParams.entries()
+    );
+
+    if (windowData.filter) {
+      this.filter = windowData.filter;
+    }
+
+    if (windowData.page) {
+      this.page = windowData.page;
+    }
+
     const tickerData = localStorage.getItem("crypto-list");
 
     if (tickerData) {
@@ -262,9 +274,18 @@ export default {
     filter() {
       this.page = 1;
 
-      const currentURL = new URL(window.location);
-
-      window.history.pushState(null, document.title);
+      window.history.pushState(
+        null,
+        document.title,
+        `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
+      );
+    },
+    page() {
+      window.history.pushState(
+        null,
+        document.title,
+        `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
+      );
     },
   },
 };
