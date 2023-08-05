@@ -68,9 +68,26 @@
       </section>
       <template v-if="tickers.length">
         <hr class="w-full border-t border-gray-600 my-4" />
+        <button
+          class="my-4 mx-2 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          v-if="page > 1"
+          v-on:click="page = page - 1"
+        >
+          Previous
+        </button>
+        <button
+          class="my-4 mx-2 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          v-if="hasNextPage"
+          v-on:click="page = page + 1"
+        >
+          Next
+        </button>
+        <div>Filter: <input v-model="filter" /></div>
+
+        <hr class="w-full border-t border-gray-600 my-4" />
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
           <div
-            v-for="tick in tickers"
+            v-for="tick in filteredTickers()"
             v-bind:key="tick"
             v-on:click="select(tick)"
             v-bind:class="{
@@ -161,6 +178,9 @@ export default {
       tickers: [],
       sel: null,
       graph: [],
+      page: 1,
+      filter: "",
+      hasNextPage: true,
     };
   },
 
@@ -176,6 +196,19 @@ export default {
   },
 
   methods: {
+    filteredTickers() {
+      const start = (this.page - 1) * 6;
+      const end = this.page * 6;
+
+      const filteredTickers = this.tickers.filter((ticker) =>
+        ticker.name.includes(this.filter)
+      );
+
+      this.hasNextPage = filteredTickers.length > end;
+
+      return filteredTickers.slice(start, end);
+    },
+
     subscribeToUpdates(tickerName) {
       setInterval(async () => {
         const f = await fetch(
@@ -189,7 +222,7 @@ export default {
         if (this.sel?.name === tickerName) {
           this.graph.push(data.USD);
         }
-      }, 5000); //5000300000
+      }, 3000000); //5000300000
     },
 
     add() {
@@ -207,6 +240,7 @@ export default {
       this.subscribeToUpdates(newTicker.name);
 
       this.ticker = "";
+      this.filter = "";
     },
     handleDelete(tickerToRemove) {
       this.tickers = this.tickers.filter((t) => t != tickerToRemove);
@@ -221,6 +255,16 @@ export default {
     select(ticker) {
       this.sel = ticker;
       this.graph = [];
+    },
+  },
+
+  watch: {
+    filter() {
+      this.page = 1;
+
+      const currentURL = new URL(window.location);
+
+      window.history.pushState(null, document.title);
     },
   },
 };
